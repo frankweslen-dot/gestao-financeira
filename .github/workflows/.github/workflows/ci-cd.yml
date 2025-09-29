@@ -4,16 +4,18 @@ on:
   push:
     branches:
       - dev
+      - main
+      - principal
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout código
+      - name: Baixar código
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
@@ -31,7 +33,27 @@ jobs:
       - name: Rodar testes
         run: |
           cd backend
-          npm test || echo "sem testes configurados"
+          npm test || echo "Nenhum teste configurado"
 
-      # Aqui entrariam os steps de deploy
-      # Exemplo: deploy no Vercel ou Railway
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v3
+
+      - name: Deploy Backend no Railway
+        run: |
+          curl -fsSL https://railway.app/cli/install.sh | sh
+          railway up --service backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Deploy Frontend no Vercel
+        run: |
+          npm install -g vercel
+          cd frontend
+          vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --confirm
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
